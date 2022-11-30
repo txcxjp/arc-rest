@@ -9,7 +9,6 @@ module Lib
   )
 where
 
-import Control.Exception (catch)
 import Control.Exception.Base (SomeException)
 import Control.Monad.Catch (catch)
 import Control.Monad.IO.Class
@@ -20,8 +19,9 @@ import GHC.IO.Exception (ExitCode (..))
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
-import System.Environment
+import System.Environment (setEnv)
 import System.Process (readProcessWithExitCode)
+import System.Process.Typed
 
 data Result = Result
   { exitCode :: Int,
@@ -38,7 +38,7 @@ type API =
 
 startApp :: IO ()
 startApp = do
-  setEnv "LANG" "C.UTF-8"
+  System.Environment.setEnv "LANG" "C.UTF-8"
   run 8082 app
 
 app :: Application
@@ -58,9 +58,9 @@ instance FromJSON SetupRequest
 
 setupHandler :: Lib.SetupRequest -> Handler Lib.Result
 setupHandler req = do
-  liftIO $ setEnv "AMAZON" (amazon req)
-  liftIO $ setEnv "ALEXA" (alexa req)
-  liftIO $ setEnv "LANGUAGE" (language req)
+  liftIO $ System.Environment.setEnv "AMAZON" (amazon req)
+  liftIO $ System.Environment.setEnv "ALEXA" (alexa req)
+  liftIO $ System.Environment.setEnv "LANGUAGE" (language req)
   (exitCode, stdout, stderr) <- liftIO $ do
     readProcessWithExitCode "printenv" [] ""
   let exitCodeInt = case exitCode of
@@ -78,13 +78,14 @@ instance FromJSON SpeakRequest
 speakHandler :: Lib.SpeakRequest -> Handler Lib.Result
 speakHandler req = do
   ( do
-      (exitCode, stdout, stderr) <- liftIO $ do
-        putStrLn ("speak:" ++ content req)
-        readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
+      -- (exitCode, stdout, stderr) <- liftIO $ do
+      --   putStrLn ("speak:" ++ content req)
+      --   readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
+      (exitCode, stdout, stderr) <- readProcess (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"])
       let exitCodeInt = case exitCode of
             ExitSuccess -> 0
             ExitFailure i -> i
-      return $ Result exitCodeInt (stdout ++ stderr)
+      return $ Result exitCodeInt (show stdout ++ show stderr)
     )
     `Control.Monad.Catch.catch` ( \e -> do
                                     liftIO $ putStrLn (show (e :: SomeException))
@@ -103,9 +104,9 @@ instance FromJSON LoginRequest
 
 loginHandler :: Lib.LoginRequest -> Handler Lib.Result
 loginHandler req = do
-  liftIO $ setEnv "EMAIL" (email req)
-  liftIO $ setEnv "PASSWORD" (password req)
-  liftIO $ setEnv "MFA_SECRET" (mfaSecret req)
+  liftIO $ System.Environment.setEnv "EMAIL" (email req)
+  liftIO $ System.Environment.setEnv "PASSWORD" (password req)
+  liftIO $ System.Environment.setEnv "MFA_SECRET" (mfaSecret req)
 
   (exitCode, stdout, stderr) <- liftIO $ do
     readProcessWithExitCode "printenv" [] ""

@@ -14,6 +14,10 @@ import Control.Monad.Catch (catch)
 import Control.Monad.IO.Class
 import Data.Aeson (FromJSON)
 import Data.Aeson.Types (ToJSON)
+import Data.ByteString.Lazy (toStrict)
+import Data.String.Conversions (ConvertibleStrings (convertString))
+import Data.Text (unpack)
+import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics (Generic)
 import GHC.IO.Exception (ExitCode (..))
 import Network.Wai
@@ -81,11 +85,13 @@ speakHandler req = do
       -- (exitCode, stdout, stderr) <- liftIO $ do
       --   putStrLn ("speak:" ++ content req)
       --   readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
-      (exitCode, stdout, stderr) <- readProcess (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"])
+      (exitCode, stdout, stderr) <-
+        readProcess
+          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req])
       let exitCodeInt = case exitCode of
             ExitSuccess -> 0
             ExitFailure i -> i
-      return $ Result exitCodeInt (show stdout ++ show stderr)
+      return $ Result exitCodeInt (Data.Text.unpack $ decodeUtf8 $ toStrict stdout)
     )
     `Control.Monad.Catch.catch` ( \e -> do
                                     liftIO $ putStrLn (show (e :: SomeException))

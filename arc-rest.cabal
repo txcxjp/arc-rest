@@ -39,6 +39,7 @@ library
     , process
     , servant-server
     , string-conversions
+    , text
     , typed-process
     , wai
     , warp
@@ -60,6 +61,7 @@ executable arc-rest-exe
     , process
     , servant-server
     , string-conversions
+    , text
     , typed-process
     , wai
     , warp
@@ -85,6 +87,7 @@ test-suite arc-rest-test
     , process
     , servant-server
     , string-conversions
+    , text
     , typed-process
     , wai
     , warp

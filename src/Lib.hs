@@ -74,8 +74,8 @@ instance FromJSON SpeakRequest
 speakHandler :: Lib.SpeakRequest -> Handler Lib.Result
 speakHandler req = do
   (exitCode, stdout, stderr) <- liftIO $ do
-    -- readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req] ""
-    readProcessWithExitCode "date" [] ""
+    putStrLn (content req)
+    readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req] ""
   let exitCodeInt = case exitCode of
         ExitSuccess -> 0
         ExitFailure i -> i

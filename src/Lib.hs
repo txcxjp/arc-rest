@@ -38,7 +38,8 @@ type API =
 
 startApp :: IO ()
 startApp = do
-  run 8080 app
+  setEnv "LANG" "C.UTF-8"
+  run 8082 app
 
 app :: Application
 app = serve api server

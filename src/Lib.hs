@@ -27,18 +27,25 @@ data Result = Result
 
 instance ToJSON Lib.Result
 
-instance FromJSON Lib.Request
-
-data Request = Request
+data LoginRequest = LoginRequest
   { email :: String,
     password :: String,
+    mfaSecret :: String
+  }
+  deriving (Eq, Show, Generic)
+
+data SpeakRequest = SpeakRequest
+  { email :: Maybe String,
+    password :: Maybe String,
     mfaSecret :: Maybe String
   }
   deriving (Eq, Show, Generic)
 
+instance FromJSON Lib.LoginRequest
+
 type API =
   "speak" :> Get '[JSON] Lib.Result
-    :<|> "login" :> ReqBody '[JSON] Lib.Request :> Post '[JSON] Lib.Result
+    :<|> "login" :> ReqBody '[JSON] Lib.LoginRequest :> Post '[JSON] Lib.Result
 
 startApp :: IO ()
 startApp = do
@@ -53,20 +60,17 @@ api = Proxy
 speakHandler :: Handler Lib.Result
 speakHandler = do
   (exitCode, stdout, stderr) <- liftIO $ do
-    readProcessWithExitCode "date" [] ""
+    readProcessWithExitCode "alexa-remote-control.sh" ["-e speak:"] ""
   let exitCodeInt = case exitCode of
         ExitSuccess -> 0
         ExitFailure i -> i
   return $ Result exitCodeInt (stdout ++ stderr)
 
-loginHandler :: Lib.Request -> Handler Lib.Result
+loginHandler :: Lib.LoginRequest -> Handler Lib.Result
 loginHandler req = do
   liftIO $ setEnv "EMAIL" (email req)
   liftIO $ setEnv "PASSWORD" (password req)
-  case mfaSecret req of
-    Just t ->
-      liftIO $ setEnv "MFA_SECRET" t
-    Nothing -> return ()
+  liftIO $ setEnv "MFA_SECRET" (mfaSecret req)
 
   (exitCode, stdout, stderr) <- liftIO $ do
     readProcessWithExitCode "printenv" [] ""

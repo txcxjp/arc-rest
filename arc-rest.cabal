@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
@@ -42,7 +42,7 @@ library
     , warp
   default-language: Haskell2010
 
-executable alexa-api-exe
+executable arc-rest-exe
   main-is: Main.hs
   other-modules:
       Paths_arc_rest
@@ -61,7 +61,7 @@ executable alexa-api-exe
     , warp
   default-language: Haskell2010
 
-test-suite alexa-api-test
+test-suite arc-rest-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
@@ -71,7 +71,7 @@ test-suite alexa-api-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
-    , alexa-api
+    , arc-rest
     , base
     , bytestring
     , hspec

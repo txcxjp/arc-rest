@@ -44,7 +44,7 @@ library:
   source-dirs: src
 
 executables:
-  alexa-api-exe:
+  arc-rest-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -56,7 +56,7 @@ executables:
     - arc-rest
 
 tests:
-  alexa-api-test:
+  arc-rest-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -65,7 +65,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - base
-    - alexa-api
+    - arc-rest
     - hspec
     - hspec-wai
     - hspec-wai-json

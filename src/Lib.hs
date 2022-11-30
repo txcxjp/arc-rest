@@ -10,7 +10,9 @@ module Lib
 where
 
 import Control.Monad.IO.Class
-import Data.Aeson
+import Data.Aeson (FromJSON)
+import qualified Data.Aeson
+import Data.Aeson.Types (ToJSON)
 import GHC.Generics (Generic)
 import GHC.IO.Exception (ExitCode (..))
 import Network.Wai
@@ -25,26 +27,11 @@ data Result = Result
   }
   deriving (Eq, Show, Generic)
 
-instance ToJSON Lib.Result
-
-data LoginRequest = LoginRequest
-  { email :: String,
-    password :: String,
-    mfaSecret :: String
-  }
-  deriving (Eq, Show, Generic)
-
-data SpeakRequest = SpeakRequest
-  { email :: Maybe String,
-    password :: Maybe String,
-    mfaSecret :: Maybe String
-  }
-  deriving (Eq, Show, Generic)
-
-instance FromJSON Lib.LoginRequest
+instance ToJSON Result
 
 type API =
-  "speak" :> Get '[JSON] Lib.Result
+  "setup" :> ReqBody '[JSON] Lib.SetupRequest :> Put '[JSON] Lib.Result
+    :<|> "speak" :> ReqBody '[JSON] Lib.SpeakRequest :> Post '[JSON] Lib.Result
     :<|> "login" :> ReqBody '[JSON] Lib.LoginRequest :> Post '[JSON] Lib.Result
 
 startApp :: IO ()
@@ -57,14 +44,51 @@ app = serve api server
 api :: Proxy API
 api = Proxy
 
-speakHandler :: Handler Lib.Result
-speakHandler = do
+data SetupRequest = SetupRequest
+  { amazon :: String,
+    alexa :: String,
+    language :: String
+  }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON SetupRequest
+
+setupHandler :: Lib.SetupRequest -> Handler Lib.Result
+setupHandler req = do
+  liftIO $ setEnv "AMAZON" (amazon req)
+  liftIO $ setEnv "ALEXA" (alexa req)
+  liftIO $ setEnv "LANGUAGE" (language req)
   (exitCode, stdout, stderr) <- liftIO $ do
-    readProcessWithExitCode "alexa-remote-control.sh" ["-e speak:"] ""
+    readProcessWithExitCode "printenv" [] ""
   let exitCodeInt = case exitCode of
         ExitSuccess -> 0
         ExitFailure i -> i
   return $ Result exitCodeInt (stdout ++ stderr)
+
+data SpeakRequest = SpeakRequest
+  { content :: String
+  }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON SpeakRequest
+
+speakHandler :: Lib.SpeakRequest -> Handler Lib.Result
+speakHandler req = do
+  (exitCode, stdout, stderr) <- liftIO $ do
+    readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa-remote-control.sh" ["-e speak:\"" ++ content req ++ "\""] ""
+  let exitCodeInt = case exitCode of
+        ExitSuccess -> 0
+        ExitFailure i -> i
+  return $ Result exitCodeInt (stdout ++ stderr)
+
+data LoginRequest = LoginRequest
+  { email :: String,
+    password :: String,
+    mfaSecret :: String
+  }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON LoginRequest
 
 loginHandler :: Lib.LoginRequest -> Handler Lib.Result
 loginHandler req = do
@@ -81,7 +105,7 @@ loginHandler req = do
 
 server :: Server API
 server =
-  speakHandler :<|> loginHandler
+  setupHandler :<|> speakHandler :<|> loginHandler
 
 -- users :: [User]
 -- users =

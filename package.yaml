@@ -28,6 +28,7 @@ dependencies:
 - process
 - string-conversions
 - bytestring
+- exceptions
 
 ghc-options:
 - -Wall

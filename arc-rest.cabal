@@ -35,6 +35,7 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , exceptions
     , process
     , servant-server
     , string-conversions
@@ -54,6 +55,7 @@ executable arc-rest-exe
     , arc-rest
     , base
     , bytestring
+    , exceptions
     , process
     , servant-server
     , string-conversions
@@ -74,6 +76,7 @@ test-suite arc-rest-test
     , arc-rest
     , base
     , bytestring
+    , exceptions
     , hspec
     , hspec-wai
     , hspec-wai-json

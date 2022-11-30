@@ -1,0 +1,85 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           arc-rest
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/alexa-api#readme>
+homepage:       https://github.com/githubuser/arc-rest#readme
+bug-reports:    https://github.com/githubuser/arc-rest/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2022 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/arc-rest
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_arc_rest
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , process
+    , servant-server
+    , string-conversions
+    , wai
+    , warp
+  default-language: Haskell2010
+
+executable alexa-api-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_arc_rest
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , arc-rest
+    , base
+    , bytestring
+    , process
+    , servant-server
+    , string-conversions
+    , wai
+    , warp
+  default-language: Haskell2010
+
+test-suite alexa-api-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_arc_rest
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , alexa-api
+    , base
+    , bytestring
+    , hspec
+    , hspec-wai
+    , hspec-wai-json
+    , process
+    , servant-server
+    , string-conversions
+    , wai
+    , warp
+  default-language: Haskell2010

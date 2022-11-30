@@ -11,7 +11,6 @@ where
 
 import Control.Monad.IO.Class
 import Data.Aeson (FromJSON)
-import qualified Data.Aeson
 import Data.Aeson.Types (ToJSON)
 import GHC.Generics (Generic)
 import GHC.IO.Exception (ExitCode (..))
@@ -75,7 +74,7 @@ instance FromJSON SpeakRequest
 speakHandler :: Lib.SpeakRequest -> Handler Lib.Result
 speakHandler req = do
   (exitCode, stdout, stderr) <- liftIO $ do
-    readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e speak:\"" ++ content req ++ "\""] ""
+    readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req] ""
   let exitCodeInt = case exitCode of
         ExitSuccess -> 0
         ExitFailure i -> i

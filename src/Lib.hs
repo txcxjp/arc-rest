@@ -9,6 +9,8 @@ module Lib
   )
 where
 
+import Control.Exception (catch)
+import Control.Exception.Base (SomeException)
 import Control.Monad.IO.Class
 import Data.Aeson (FromJSON)
 import Data.Aeson.Types (ToJSON)
@@ -76,6 +78,10 @@ speakHandler req = do
   (exitCode, stdout, stderr) <- liftIO $ do
     putStrLn ("speak:" ++ content req)
     readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
+      `catch` ( \e -> do
+                  putStrLn (show (e :: SomeException))
+                  return (ExitFailure 1, "someexception catched : ", show e)
+              )
   let exitCodeInt = case exitCode of
         ExitSuccess -> 0
         ExitFailure i -> i

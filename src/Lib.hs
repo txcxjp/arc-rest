@@ -39,13 +39,8 @@ type API =
     :<|> "speak" :> ReqBody '[JSON] Lib.SpeakRequest :> Post '[JSON] Lib.Result
     :<|> "login" :> ReqBody '[JSON] Lib.LoginRequest :> Post '[JSON] Lib.Result
 
-lbsToString :: BL.ByteString -> String
-lbsToString = Data.Text.unpack . decodeUtf8 . toStrict
-
 startApp :: IO ()
 startApp = do
-  (exitCode, stdout, stderr) <- readProcess (proc "locale" [])
-  putStrLn $ lbsToString stdout
   run 8082 app
 
 app :: Application
@@ -90,11 +85,11 @@ speakHandler req = do
       --   readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
       (exitCode, stdout, stderr) <-
         readProcess
-          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:'テスト'"]) -- " ++ content req])
+          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req])
       let exitCodeInt = case exitCode of
             ExitSuccess -> 0
             ExitFailure i -> i
-      return $ Result exitCodeInt (Data.Text.unpack $ decodeUtf8 $ toStrict stdout)
+      return $ Result exitCodeInt ((lbsToString stdout) ++ (lbsToString stderr))
     )
     `Control.Monad.Catch.catch` ( \e -> do
                                     liftIO $ putStrLn (show (e :: SomeException))
@@ -133,3 +128,6 @@ server =
 --   [ User 1 "Isaac" "Newton",
 --     User 2 "Albert" "Einstein"
 --   ]
+
+lbsToString :: BL.ByteString -> String
+lbsToString = Data.Text.unpack . decodeUtf8 . toStrict

@@ -87,7 +87,7 @@ speakHandler req = do
       --   readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
       (exitCode, stdout, stderr) <-
         readProcess
-          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req])
+          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:テスト"]) -- " ++ content req])
       let exitCodeInt = case exitCode of
             ExitSuccess -> 0
             ExitFailure i -> i

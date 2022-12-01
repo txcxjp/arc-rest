@@ -15,11 +15,10 @@ import Control.Monad.IO.Class
 import Data.Aeson (FromJSON)
 import Data.Aeson.Types (ToJSON)
 import Data.ByteString.Lazy (toStrict)
-import Data.String.Conversions (ConvertibleStrings (convertString))
+import qualified Data.ByteString.Lazy as BL
 import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics (Generic)
-import GHC.IO.Exception (ExitCode (..))
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -40,9 +39,13 @@ type API =
     :<|> "speak" :> ReqBody '[JSON] Lib.SpeakRequest :> Post '[JSON] Lib.Result
     :<|> "login" :> ReqBody '[JSON] Lib.LoginRequest :> Post '[JSON] Lib.Result
 
+lbsToString :: BL.ByteString -> String
+lbsToString = Data.Text.unpack . decodeUtf8 . toStrict
+
 startApp :: IO ()
 startApp = do
-  System.Environment.setEnv "LANG" "C.UTF-8"
+  (exitCode, stdout, stderr) <- readProcess (proc "locale" [])
+  putStrLn $ lbsToString stdout
   run 8082 app
 
 app :: Application
@@ -87,7 +90,7 @@ speakHandler req = do
       --   readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
       (exitCode, stdout, stderr) <-
         readProcess
-          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:テスト"]) -- " ++ content req])
+          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:'テスト'"]) -- " ++ content req])
       let exitCodeInt = case exitCode of
             ExitSuccess -> 0
             ExitFailure i -> i

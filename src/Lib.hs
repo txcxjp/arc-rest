@@ -16,6 +16,7 @@ import Data.Aeson (FromJSON)
 import Data.Aeson.Types (ToJSON)
 import Data.ByteString.Lazy (toStrict)
 import qualified Data.ByteString.Lazy as BL
+import Data.List (isPrefixOf)
 import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics (Generic)
@@ -52,6 +53,7 @@ instance ToJSON Result
 type API =
   "setup" :> ReqBody '[JSON] Lib.SetupRequest :> Put '[JSON] Lib.Result
     :<|> "speak" :> ReqBody '[JSON] Lib.SpeakRequest :> Post '[JSON] Lib.Result
+    :<|> "command" :> ReqBody '[JSON] Lib.CommandRequest :> Put '[JSON] Lib.Result
 
 startApp :: IO ()
 startApp = do
@@ -71,7 +73,7 @@ data SetupRequest = SetupRequest
     password :: String,
     mfaSecret :: String
   }
-  deriving (Eq, Show, Generic)
+  deriving (Generic)
 
 instance FromJSON SetupRequest
 
@@ -90,10 +92,11 @@ setupHandler req = do
         ExitFailure i -> i
   return $ Result exitCodeInt (stdout ++ stderr)
 
-newtype SpeakRequest = SpeakRequest
-  { content :: String
+data SpeakRequest = SpeakRequest
+  { content :: String,
+    device :: Maybe String
   }
-  deriving (Eq, Show, Generic)
+  deriving (Generic)
 
 instance FromJSON SpeakRequest
 
@@ -101,9 +104,16 @@ speakHandler :: Lib.SpeakRequest -> Handler Lib.Result
 speakHandler req =
   do
     ( do
+        let args =
+              ( case device req of
+                  Just device_ ->
+                    ["-d", device_]
+                  _ -> []
+              )
+                ++ ["-e", "speak:" ++ content req]
         (retExitCode, stdout, stderr) <-
           readProcess
-            (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-d", "フィラデルフィア" , "-e", "speak:" ++ content req])
+            (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" args)
         let exitCodeInt = case retExitCode of
               ExitSuccess -> 0
               ExitFailure i -> i
@@ -113,9 +123,54 @@ speakHandler req =
                                     return $ Result 1 (show e)
                                 )
 
+data CommandRequest = CommandRequest
+  { command :: String,
+    devicea :: Maybe String
+  }
+  deriving (Generic)
+
+instance FromJSON CommandRequest
+
+commandHandler :: CommandRequest -> Handler Lib.Result
+commandHandler req = do
+  do
+    ( do
+        (retExitCode, stdout, stderr) <-
+          readProcess
+            ( proc
+                "/usr/lib/alexa-remote-control/alexa_remote_control.sh"
+                (mkArgs (devicea req) ++ mkCommand (command req))
+            )
+        let exitCodeInt = case retExitCode of
+              ExitSuccess -> 0
+              ExitFailure i -> i
+        return $ Result exitCodeInt (lbsToString stdout ++ lbsToString stderr)
+      )
+    `Control.Monad.Catch.catch` ( \(e :: SomeException) -> do
+                                    return $ Result 1 (show e)
+                                )
+  where
+    mkArgs args =
+      case args of
+        Just device_ ->
+          ["-d", device_]
+        _ -> []
+
+    mkCommand c
+      | isPrefixOf "textcommand:" c
+          || isPrefixOf "playmusic:" c
+          || isPrefixOf "speak:" c
+          || elem c ["weather", "traffic", "flashbriefing", "goodmorning", "singasong", "tellstory"] =
+          ["-e", c]
+      | otherwise = []
+
+{-
+  weather,traffic,flashbriefing,goodmorning,singasong,tellstory,
+-}
+
 server :: Server API
 server =
-  setupHandler :<|> speakHandler
+  setupHandler :<|> speakHandler :<|> commandHandler
 
 lbsToString :: BL.ByteString -> String
 lbsToString = Data.Text.unpack . decodeUtf8 . toStrict

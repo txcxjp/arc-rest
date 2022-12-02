@@ -1,17 +1,17 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Lib
   ( startApp,
-    app,
   )
 where
 
 import Control.Exception.Base (SomeException)
 import Control.Monad.Catch (catch)
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson (FromJSON)
 import Data.Aeson.Types (ToJSON)
 import Data.ByteString.Lazy (toStrict)
@@ -19,12 +19,27 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics (Generic)
-import Network.Wai
-import Network.Wai.Handler.Warp
+import Network.Wai (Application)
+import Network.Wai.Handler.Warp (run)
 import Servant
+  ( Handler,
+    JSON,
+    Post,
+    Proxy (..),
+    Put,
+    ReqBody,
+    Server,
+    serve,
+    type (:<|>) (..),
+    type (:>),
+  )
 import System.Environment (setEnv)
 import System.Process (readProcessWithExitCode)
 import System.Process.Typed
+  ( ExitCode (ExitFailure, ExitSuccess),
+    proc,
+    readProcess,
+  )
 
 data Result = Result
   { exitCode :: Int,
@@ -37,11 +52,10 @@ instance ToJSON Result
 type API =
   "setup" :> ReqBody '[JSON] Lib.SetupRequest :> Put '[JSON] Lib.Result
     :<|> "speak" :> ReqBody '[JSON] Lib.SpeakRequest :> Post '[JSON] Lib.Result
-    :<|> "login" :> ReqBody '[JSON] Lib.LoginRequest :> Post '[JSON] Lib.Result
 
 startApp :: IO ()
 startApp = do
-  run 8082 app
+  run 80 app
 
 app :: Application
 app = serve api server
@@ -52,7 +66,10 @@ api = Proxy
 data SetupRequest = SetupRequest
   { amazon :: String,
     alexa :: String,
-    language :: String
+    language :: String,
+    email :: String,
+    password :: String,
+    mfaSecret :: String
   }
   deriving (Eq, Show, Generic)
 
@@ -63,14 +80,17 @@ setupHandler req = do
   liftIO $ System.Environment.setEnv "AMAZON" (amazon req)
   liftIO $ System.Environment.setEnv "ALEXA" (alexa req)
   liftIO $ System.Environment.setEnv "LANGUAGE" (language req)
-  (exitCode, stdout, stderr) <- liftIO $ do
+  liftIO $ System.Environment.setEnv "EMAIL" (email req)
+  liftIO $ System.Environment.setEnv "PASSWORD" (password req)
+  liftIO $ System.Environment.setEnv "MFA_SECRET" (mfaSecret req)
+  (retExitCode, stdout, stderr) <- liftIO $ do
     readProcessWithExitCode "printenv" [] ""
-  let exitCodeInt = case exitCode of
+  let exitCodeInt = case retExitCode of
         ExitSuccess -> 0
         ExitFailure i -> i
   return $ Result exitCodeInt (stdout ++ stderr)
 
-data SpeakRequest = SpeakRequest
+newtype SpeakRequest = SpeakRequest
   { content :: String
   }
   deriving (Eq, Show, Generic)
@@ -78,56 +98,24 @@ data SpeakRequest = SpeakRequest
 instance FromJSON SpeakRequest
 
 speakHandler :: Lib.SpeakRequest -> Handler Lib.Result
-speakHandler req = do
-  ( do
-      -- (exitCode, stdout, stderr) <- liftIO $ do
-      --   putStrLn ("speak:" ++ content req)
-      --   readProcessWithExitCode "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:hello"] ""
-      (exitCode, stdout, stderr) <-
-        readProcess
-          (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-e", "speak:" ++ content req])
-      let exitCodeInt = case exitCode of
-            ExitSuccess -> 0
-            ExitFailure i -> i
-      return $ Result exitCodeInt ((lbsToString stdout) ++ (lbsToString stderr))
-    )
-    `Control.Monad.Catch.catch` ( \e -> do
-                                    liftIO $ putStrLn (show (e :: SomeException))
-                                    -- return (ExitFailure 1, "someexception catched : ", show e)
+speakHandler req =
+  do
+    ( do
+        (retExitCode, stdout, stderr) <-
+          readProcess
+            (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-d", "フィラデルフィア" , "-e", "speak:" ++ content req])
+        let exitCodeInt = case retExitCode of
+              ExitSuccess -> 0
+              ExitFailure i -> i
+        return $ Result exitCodeInt (lbsToString stdout ++ lbsToString stderr)
+      )
+    `Control.Monad.Catch.catch` ( \(e :: SomeException) -> do
                                     return $ Result 1 (show e)
                                 )
 
-data LoginRequest = LoginRequest
-  { email :: String,
-    password :: String,
-    mfaSecret :: String
-  }
-  deriving (Eq, Show, Generic)
-
-instance FromJSON LoginRequest
-
-loginHandler :: Lib.LoginRequest -> Handler Lib.Result
-loginHandler req = do
-  liftIO $ System.Environment.setEnv "EMAIL" (email req)
-  liftIO $ System.Environment.setEnv "PASSWORD" (password req)
-  liftIO $ System.Environment.setEnv "MFA_SECRET" (mfaSecret req)
-
-  (exitCode, stdout, stderr) <- liftIO $ do
-    readProcessWithExitCode "printenv" [] ""
-  let exitCodeInt = case exitCode of
-        ExitSuccess -> 0
-        ExitFailure i -> i
-  return $ Result exitCodeInt (stdout ++ stderr)
-
 server :: Server API
 server =
-  setupHandler :<|> speakHandler :<|> loginHandler
-
--- users :: [User]
--- users =
---   [ User 1 "Isaac" "Newton",
---     User 2 "Albert" "Einstein"
---   ]
+  setupHandler :<|> speakHandler
 
 lbsToString :: BL.ByteString -> String
 lbsToString = Data.Text.unpack . decodeUtf8 . toStrict

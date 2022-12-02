@@ -53,7 +53,7 @@ instance ToJSON Result
 type API =
   "setup" :> ReqBody '[JSON] Lib.SetupRequest :> Put '[JSON] Lib.Result
     :<|> "speak" :> ReqBody '[JSON] Lib.SpeakRequest :> Post '[JSON] Lib.Result
-    :<|> "command" :> ReqBody '[JSON] Lib.CommandRequest :> Put '[JSON] Lib.Result
+    :<|> "command" :> ReqBody '[JSON] Lib.CommandRequest :> Post '[JSON] Lib.Result
 
 startApp :: IO ()
 startApp = do
@@ -160,7 +160,24 @@ commandHandler req = do
       | isPrefixOf "textcommand:" c
           || isPrefixOf "playmusic:" c
           || isPrefixOf "speak:" c
-          || elem c ["weather", "traffic", "flashbriefing", "goodmorning", "singasong", "tellstory"] =
+          || isPrefixOf "vol:" c
+          || elem
+            c
+            [ "weather",
+              "traffic",
+              "flashbriefing",
+              "goodmorning",
+              "singasong",
+              "tellstory",
+              "pause",
+              "play",
+              "next",
+              "prev",
+              "fwd",
+              "rwd",
+              "shuffle",
+              "repeat"
+            ] =
           ["-e", c]
       | otherwise = []
 

@@ -181,10 +181,6 @@ commandHandler req = do
           ["-e", c]
       | otherwise = []
 
-{-
-  weather,traffic,flashbriefing,goodmorning,singasong,tellstory,
--}
-
 server :: Server API
 server =
   setupHandler :<|> speakHandler :<|> commandHandler

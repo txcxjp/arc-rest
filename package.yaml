@@ -47,7 +47,7 @@ library:
   source-dirs: src
 
 executables:
-  arc-rest-exe:
+  arc-rest:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

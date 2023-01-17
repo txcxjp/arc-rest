@@ -13,8 +13,11 @@ module Lib
 where
 
 import Handlers
+import Network.HTTP.Types.Method
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.Cors (CorsResourcePolicy (corsMethods, corsVaryOrigin), cors, corsRequestHeaders, simpleCorsResourcePolicy)
+import Network.Wai.Middleware.Servant.Options (provideOptions)
 import Servant
   ( JSON,
     Post,
@@ -41,7 +44,15 @@ type CommandType = "command" :> ReqBody '[JSON] CommandRequest :> Post '[JSON] R
 
 startApp :: IO ()
 startApp = do
-  run 80 app
+  run 80 $
+    cors (const $ Just policy) $
+      provideOptions api app
+  where
+    policy =
+      simpleCorsResourcePolicy
+        { corsRequestHeaders = ["content-type"],
+          corsMethods = [methodGet, methodPut, methodPost, methodOptions]
+        }
 
 app :: Application
 app = serve api server

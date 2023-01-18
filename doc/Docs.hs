@@ -42,4 +42,4 @@ main = do
   args <- getArgs
   if null args
     then return ()
-    else exportSwagger (head args)
+    else exportSwagger (head args)  

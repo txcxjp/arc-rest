@@ -20,7 +20,7 @@ import System.Process.Typed
     readProcess,
   )
 import Types
-  ( CommandRequest (command, devicea),
+  ( CommandRequest (..),
     Result (Result),
     SetupRequest (alexa, amazon, email, language, mfaSecret, password),
     SpeakRequest (content, device),
@@ -35,7 +35,7 @@ commandHandler req = do
           readProcess
             ( proc
                 "/usr/lib/alexa-remote-control/alexa_remote_control.sh"
-                (mkArgs (devicea req) ++ mkCommand (command req))
+                (mkArgs (commandRequestDevice req) ++ mkCommand (command req))
             )
         let exitCodeInt = case retExitCode of
               ExitSuccess -> 0

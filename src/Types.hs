@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
+-- allows to write Map and HashMap as lists
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Types
   ( Result (..),
@@ -8,8 +11,12 @@ module Types
   )
 where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Data.Swagger (ToSchema)
+import Control.Lens
+import Data.Aeson (FromJSON, ToJSON, withObject, (.:))
+import Data.Aeson.Key (fromString)
+import Data.Aeson.Types (FromJSON (parseJSON))
+import Data.Data (Proxy (Proxy))
+import Data.Swagger (HasProperties (properties), HasRequired (required), HasType (type_), NamedSchema (NamedSchema), SwaggerType (SwaggerObject), ToSchema (declareNamedSchema), declareSchemaRef)
 import GHC.Generics (Generic)
 
 data Result = Result
@@ -48,10 +55,26 @@ instance ToSchema SpeakRequest
 
 data CommandRequest = CommandRequest
   { command :: String,
-    devicea :: Maybe String
+    commandRequestDevice :: Maybe String
   }
-  deriving (Generic)
 
-instance FromJSON CommandRequest
+instance FromJSON CommandRequest where
+  parseJSON = withObject "CommandRequest" $ \v ->
+    CommandRequest
+      <$> v
+      .: fromString "command"
+      <*> v
+      .: fromString "device"
 
-instance ToSchema CommandRequest
+instance ToSchema CommandRequest where
+  declareNamedSchema _ = do
+    strSchema <- declareSchemaRef (Proxy :: Proxy String)
+    let c = mempty
+          & type_ ?~ SwaggerObject
+          & properties
+            .~ [ ("command", strSchema),
+                 ("device", strSchema)
+               ]
+          & required .~ ["command"]
+    return $
+      NamedSchema (Just "CommandRequest") $ c

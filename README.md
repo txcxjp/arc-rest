@@ -71,7 +71,7 @@ curl -X 'POST' \
 you can also use swagger to read full api reference.
 ```
 stack build
-stack exec stack exec arc-rest-docs -- swagger.yaml    
+stack exec stack exec arc-rest-swagger -- swagger.yaml    
 ```
 
 ## develop

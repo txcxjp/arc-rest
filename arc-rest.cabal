@@ -80,12 +80,12 @@ executable arc-rest
     , warp
   default-language: Haskell2010
 
-executable arc-rest-docs
+executable arc-rest-swagger
   main-is: Docs.hs
   other-modules:
       Paths_arc_rest
   hs-source-dirs:
-      doc
+      swagger
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson

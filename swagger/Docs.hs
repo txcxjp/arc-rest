@@ -8,10 +8,9 @@ import Control.Lens
 import Data.Aeson (encode, toJSON)
 import Data.Swagger
 import Lib as MyLib
-import Servant (JSON, Proxy (..), Put, ReqBody, (:>))
+import Servant (Proxy (..))
 import Servant.Swagger
 import System.Environment (getArgs)
-import Types
 import Utils (lbsToString)
 
 exportSwagger :: String -> IO ()
@@ -38,6 +37,7 @@ exportSwagger filepath = do
 
 -- a = toSwagger
 
+main :: IO ()
 main = do
   args <- getArgs
   if null args

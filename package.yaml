@@ -62,9 +62,9 @@ executables:
     dependencies:
       - base
       - arc-rest
-  arc-rest-docs:
+  arc-rest-swagger:
     main: Docs.hs
-    source-dirs: doc
+    source-dirs: swagger
     dependencies:
       - arc-rest == 0.1.0.0
 

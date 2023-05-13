@@ -1,17 +1,10 @@
-# alexa-api
+# arc-rest
 
 ## Description
 it provides restful interface for alexa-remote-control
 - [alexa-remote-control](https://github.com/thorsten-gehrig/alexa-remote-control)
 
 ## Launch
-### Using Docker-hub
-most easy.
-You don't even need to clone this repository
-
-```
-docker pull blowbranch/arc-rest
-```
 
 ### Using Docker
 ```
@@ -71,7 +64,7 @@ curl -X 'POST' \
 you can also use swagger to read full api reference.
 ```
 stack build
-stack exec stack exec arc-rest-swagger -- swagger.yaml    
+stack exec arc-rest-swagger -- swagger.yaml    
 ```
 
 ## develop

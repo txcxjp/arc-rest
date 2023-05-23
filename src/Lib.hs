@@ -9,6 +9,7 @@ module Lib
     SetupType,
     SpeakType,
     CommandType,
+    ResetType
   )
 where
 
@@ -35,12 +36,15 @@ type API =
   SetupType
     :<|> SpeakType
     :<|> CommandType
+    :<|> ResetType
 
 type SetupType = "setup" :> ReqBody '[JSON] SetupRequest :> Put '[JSON] Result
 
 type SpeakType = "speak" :> ReqBody '[JSON] SpeakRequest :> Post '[JSON] Result
 
 type CommandType = "command" :> ReqBody '[JSON] CommandRequest :> Post '[JSON] Result
+
+type ResetType = "reset" :> Put '[JSON] Result
 
 startApp :: IO ()
 startApp = do
@@ -62,4 +66,4 @@ api = Proxy
 
 server :: Server API
 server =
-  setupHandler :<|> speakHandler :<|> commandHandler
+  setupHandler :<|> speakHandler :<|> commandHandler :<|> resetHandler

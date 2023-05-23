@@ -25,12 +25,16 @@ exportSwagger filepath = do
               & info . description ?~ "This is an API for the Users service"
               & info . license ?~ "MIT"
               & host ?~ "example.com"
-              & applyTagsFor setupOperation ["put" & description ?~ "you must run this at first."]
+              & applyTagsFor setupOperation ["Setup" & description ?~ "you must run this at first."]
+              & applyTagsFor resetOperation ["Reset" & description ?~ "re-login and reload available devices.Needed to execute `setup` api in advance."]
           )
   where
     setupOperation :: Traversal' Swagger Operation
     -- myOp = subOperations (Proxy :: Proxy SetupType) (Proxy :: Proxy API)
     setupOperation = subOperations (Proxy :: Proxy SetupType) (Proxy :: Proxy API)
+
+    resetOperation :: Traversal' Swagger Operation
+    resetOperation = subOperations (Proxy :: Proxy ResetType) (Proxy :: Proxy API)
 
 -- :: (IsSubAPI sub api, HasSwagger sub) => Proxy sub -> Proxy api -> Traversal' Swagger Operation
 -- c :: MyType
@@ -42,4 +46,4 @@ main = do
   args <- getArgs
   if null args
     then return ()
-    else exportSwagger (head args)  
+    else exportSwagger (head args)

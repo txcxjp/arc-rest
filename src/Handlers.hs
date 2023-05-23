@@ -4,6 +4,7 @@ module Handlers
   ( setupHandler,
     commandHandler,
     speakHandler,
+    resetHandler
   )
 where
 
@@ -115,3 +116,16 @@ speakHandler req =
     `M.catch` ( \(e :: SomeException) -> do
                   return $ Result 1 (show e)
               )
+
+resetHandler :: Handler Result
+resetHandler = do
+  (retExitCode, stdout, stderr) <- liftIO $ readProcess (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-l"])
+  exitCodeInt <- case retExitCode of
+    ExitSuccess -> do
+      (retExitCode, stdout, stderr) <- liftIO $ readProcess (proc "/usr/lib/alexa-remote-control/alexa_remote_control.sh" ["-login"])
+      return $ case retExitCode of
+        ExitSuccess -> 0
+        ExitFailure i -> i
+    ExitFailure i -> return i
+
+  return $ Result exitCodeInt (lbsToString stdout ++ lbsToString stderr)

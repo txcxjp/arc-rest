@@ -8,4 +8,4 @@ services:
       dockerfile: develop/develop.dockerfile
     container_name: arc-rest
     volumes:
-      - .:/arc-rest 
+      - ..:/arc-rest 

@@ -58,6 +58,20 @@ curl -X 'POST' \
 }'
 ```
 
+when you want to logout from Amazon, you can run ``logout`` api
+```
+curl -X 'POST' \
+  'http://localhost:8080/command' \
+  -H 'accept: application/json;charset=utf-8' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -d '{
+  "command": "singasong"
+}'
+```
+since login information is hold by Arc-rest, it logins automatically on next action.
+you can also use this api when you want to update device list.
+
+
 
 
 ## API Reference

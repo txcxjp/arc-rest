@@ -29,14 +29,21 @@ instance ToJSON Result
 
 instance ToSchema Result
 
-data SetupRequest = SetupRequest
-  { amazon :: String,
-    alexa :: String,
-    language :: String,
-    email :: String,
-    password :: String,
-    mfaSecret :: String
-  }
+data SetupRequest
+  = WithPassword
+      { amazon :: String,
+        alexa :: String,
+        language :: String,
+        email :: String,
+        password :: String,
+        mfaSecret :: String
+      }
+  | WithToken
+      { amazon :: String,
+        alexa :: String,
+        language :: String,
+        refreshToken :: String
+      }
   deriving (Generic)
 
 instance FromJSON SetupRequest
@@ -62,19 +69,21 @@ instance FromJSON CommandRequest where
   parseJSON = withObject "CommandRequest" $ \v ->
     CommandRequest
       <$> v
-      .: fromString "command"
+        .: fromString "command"
       <*> v
-      .: fromString "device"
+        .: fromString "device"
 
 instance ToSchema CommandRequest where
   declareNamedSchema _ = do
     strSchema <- declareSchemaRef (Proxy :: Proxy String)
-    let c = mempty
-          & type_ ?~ SwaggerObject
-          & properties
-            .~ [ ("command", strSchema),
-                 ("device", strSchema)
-               ]
-          & required .~ ["command"]
+    let c =
+          mempty
+            & type_ ?~ SwaggerObject
+            & properties
+              .~ [ ("command", strSchema),
+                   ("device", strSchema)
+                 ]
+            & required .~ ["command"]
     return $
-      NamedSchema (Just "CommandRequest") $ c
+      NamedSchema (Just "CommandRequest") $
+        c

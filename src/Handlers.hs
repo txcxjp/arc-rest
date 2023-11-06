@@ -23,7 +23,7 @@ import System.Process.Typed
 import Types
   ( CommandRequest (..),
     Result (Result),
-    SetupRequest (alexa, amazon, email, language, mfaSecret, password),
+    SetupRequest (WithPassword, WithToken),
     SpeakRequest (content, device),
   )
 import Utils
@@ -80,12 +80,20 @@ commandHandler req = do
 
 setupHandler :: SetupRequest -> Handler Result
 setupHandler req = do
-  liftIO $ setEnv "AMAZON" (amazon req)
-  liftIO $ setEnv "ALEXA" (alexa req)
-  liftIO $ setEnv "LANGUAGE" (language req)
-  liftIO $ setEnv "EMAIL" (email req)
-  liftIO $ setEnv "PASSWORD" (password req)
-  liftIO $ setEnv "MFA_SECRET" (mfaSecret req)
+  case req of
+    WithPassword amazon alexa language email password mfaSecret-> do
+      liftIO $ setEnv "AMAZON" amazon
+      liftIO $ setEnv "ALEXA" alexa
+      liftIO $ setEnv "LANGUAGE" language 
+      liftIO $ setEnv "EMAIL" email 
+      liftIO $ setEnv "PASSWORD" password 
+      liftIO $ setEnv "MFA_SECRET" mfaSecret 
+    WithToken amazon alexa language refreshToken -> do
+      liftIO $ setEnv "AMAZON" amazon
+      liftIO $ setEnv "ALEXA" alexa
+      liftIO $ setEnv "LANGUAGE" language 
+      liftIO $ setEnv "REFRESH_TOKEN" refreshToken
+
   (retExitCode, stdout, stderr) <- liftIO $ do
     readProcessWithExitCode "printenv" [] ""
   let exitCodeInt = case retExitCode of
